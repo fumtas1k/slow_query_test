@@ -1,12 +1,22 @@
-DROP DATABASE IF EXISTS slow_query_test;
+# スロークエリログ設定
+# SHOW variables LIKE "%query%";
+# set global slow_query_log = 1;
+# set long_query_time = 1;
+
+# データベースを削除
+# DROP DATABASE IF EXISTS slow_query_test;
 SHOW DATABASES;
-CREATE DATABASE IF NOT EXISTS slow_query_test DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+# データベースがなかったら作成
+# CREATE DATABASE IF NOT EXISTS slow_query_test DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE slow_query_test;
 
-DROP TABLE IF EXISTS child;
-DROP TABLE IF EXISTS parent;
+# テーブル削除
+# DROP TABLE IF EXISTS children;
+# DROP TABLE IF EXISTS parents;
 
-CREATE TABLE IF NOT EXISTS child(
+# 子テーブル作成
+CREATE TABLE IF NOT EXISTS children(
 	child_id bigint(20) NOT NULL AUTO_INCREMENT COMMENT "子ID",
 	size ENUM("SMALL", "MEDIUM", "LARGE") NOT NULL DEFAULT "MEDIUM" COMMENT "サイズ",
 	register_date date NOT NULL COMMENT "登録日",
@@ -18,7 +28,8 @@ CREATE TABLE IF NOT EXISTS child(
 	PRIMARY KEY(child_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS parent(
+# 親テーブル作成
+CREATE TABLE IF NOT EXISTS parents(
 	parent_id bigint(20) NOT NULL AUTO_INCREMENT COMMENT "親ID",
 	size ENUM("SMALL", "MEDIUM", "LARGE") NOT NULL DEFAULT "MEDIUM" COMMENT "サイズ",
 	register_date date NOT NULL COMMENT "登録日",
@@ -28,23 +39,37 @@ CREATE TABLE IF NOT EXISTS parent(
 	PRIMARY KEY(parent_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CALL insert_data(10000);
+# データ投入
+CALL insert_data(50000);
+SELECT COUNT(*) FROM children;
 
-INSERT INTO parent (size, register_date, remark)
+# 子テーブルから親テーブルにデータ投入
+INSERT INTO parents (size, register_date, remark)
 SELECT ch.size, ch.register_date, IF(ch.remark_1 IS NOT NULL, ch.remark_1, ch.remark_2)
-FROM child ch
+FROM children ch
 GROUP BY ch.size, ch.register_date, IF(ch.remark_1 IS NOT NULL, ch.remark_1, ch.remark_2);
 
-# TRUNCATE TABLE parent;
-# ALTER TABLE child DROP COLUMN parent_id;
-ALTER TABLE child ADD COLUMN parent_id bigint NOT NULL COMMENT "親ID" AFTER child_id;
-ALTER TABLE child ADD INDEX parent_id(parent_id);
-# ALTER TABLE parent ADD UNIQUE INDEX mix_key(size, register_date, remark);
+SELECT COUNT(*) FROM parents;
 
-EXPLAIN UPDATE child c, parent p
+# 親テーブルのデータ削除
+# TRUNCATE TABLE parents;
+
+# 子テーブルに親ID作成
+ALTER TABLE children ADD COLUMN parent_id bigint NOT NULL COMMENT "親ID" AFTER child_id;
+ALTER TABLE children ADD INDEX parent_id(parent_id);
+
+# 親テーブルに複合キー作成
+ALTER TABLE parents ADD UNIQUE INDEX mix_key(size, register_date, remark);
+
+# 子テーブルに親テーブルから親ID取ってきて追加
+EXPLAIN UPDATE children c, parents p
 SET c.parent_id = p.parent_id
 WHERE c.size = p.size
 AND c.register_date = p.register_date
 AND IF(c.remark_1 IS NOT NULL, c.remark_1, c.remark_2) = p.remark;
 
-ALTER TABLE parent DROP INDEX mix_key;
+# 親テーブルの複合キー削除
+ALTER TABLE parents DROP INDEX mix_key;
+
+# 子の親ID削除
+ALTER TABLE children DROP COLUMN parent_id;

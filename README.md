@@ -1,5 +1,7 @@
 # slow_query_test
 
+### childrenテーブル
+
 | 列名 | ＃ | データ・タイプ | NOT NULL | オートインクリメント | キー | デフォルト | 追加情報 | コメント |
 | - | - | - | - | - | - | - | - | - |
 |child_id| 1 | bigint | true | true | PRI | [NULL] | auto_increment | 子ID |
@@ -11,6 +13,8 @@
 |child_original_message | 7 | varchar(10) | false | false | [NULL] | [NULL] | | 子のオリジナルメッセージ |
 |createdAt | 8 | datetime | true | false | [NULL] | CURRENT_TIMESTAMP | DEFAULT_GENERATED | 作成日時 |
 |updatedAt | 9 | datetime	true | false | [NULL] | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP | | 更新日時 |
+
+### parentsテーブル
 
 | 列名 | ＃ | データ・タイプ | NOT NULL | オートインクリメント | キー | デフォルト | 追加情報 | コメント |
 | - | - | - | - | - | - | - | - | - |
